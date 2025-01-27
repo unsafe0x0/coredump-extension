@@ -2,134 +2,115 @@ import * as vscode from "vscode";
 import axios from "axios";
 
 const API_URL = "https://byterace.vercel.app/api/activity";
+const Byte_INTERVAL = 2 * 60 * 1000;
 
-interface CodingActivity {
-  language: string;
-  duration: number;
-}
+let lastByteTime: number | null = null;
+let typingTimer: NodeJS.Timeout | null = null;
+let privateKey: string | null = null;
+let startTime: number | null = null;
 
-let currentLanguage: string | null = null;
-let lastActivityTime: number = Date.now();
-let codingData: CodingActivity[] = [];
-let isSending = false;
-let inactivityTimeout: NodeJS.Timeout | null = null;
-let languageChangedTimeout: NodeJS.Timeout | null = null;
-let debounceTimeout: NodeJS.Timeout | null = null;
-const languageChangeDelay = 30000;
+const sendByte = async (language: string, timeSpent: number) => {
+  if (!privateKey) return;
 
-function getPrivateKey(): string | undefined {
-  const config = vscode.workspace.getConfiguration("byteRace");
-  return config.get<string>("privateKey");
-}
+  try {
+    const response = await axios.post(API_URL, {
+      privateKey,
+      languageName: language,
+      timeSpent,
+    });
 
-async function setPrivateKey(privateKey: string) {
-  const config = vscode.workspace.getConfiguration("byteRace");
-  await config.update(
-    "privateKey",
-    privateKey,
-    vscode.ConfigurationTarget.Global
-  );
-}
-
-function trackLanguage(language: string) {
-  const now = Date.now();
-  if (currentLanguage && inactivityTimeout) {
-    const duration = (now - lastActivityTime) / 1000;
-    if (duration >= 30) {
-      codingData.push({ language: currentLanguage, duration });
+    if (response.status === 200) {
+      lastByteTime = Date.now();
+    } else {
+      console.error("Failed to send byte:", response.statusText);
     }
+  } catch (error) {
+    console.error("Failed to send byte:", error);
+  }
+};
+
+const onDidChangeTextDocument = (event: vscode.TextDocumentChangeEvent) => {
+  if (typingTimer) {
+    clearTimeout(typingTimer);
   }
 
-  currentLanguage = language;
-  lastActivityTime = now;
-
-  if (debounceTimeout) {
-    clearTimeout(debounceTimeout);
+  if (!startTime) {
+    startTime = Date.now();
   }
 
-  if (languageChangedTimeout) {
-    clearTimeout(languageChangedTimeout);
+  typingTimer = setTimeout(() => {
+    const now = Date.now();
+    const language = event.document.languageId;
+
+    if (!lastByteTime || now - lastByteTime >= Byte_INTERVAL) {
+      const timeSpent = (now - (startTime || 0)) / 1000 / 60;
+      sendByte(language, timeSpent);
+      startTime = now;
+    }
+  }, Byte_INTERVAL);
+};
+
+const onDidSaveTextDocument = (document: vscode.TextDocument) => {
+  const language = document.languageId;
+  if (startTime) {
+    const timeSpent = (Date.now() - startTime) / 1000 / 60;
+    sendByte(language, timeSpent);
+    startTime = Date.now();
   }
+};
 
-  languageChangedTimeout = setTimeout(() => {
-    sendData(language);
-  }, languageChangeDelay);
-}
+const inputPrivateKey = async () => {
+  const result = await vscode.window.showInputBox({
+    prompt: "Enter ByteRace private key:",
+    placeHolder: "Private Key",
+  });
 
-async function sendData(language: string) {
-  const privateKey = getPrivateKey();
-  if (!privateKey) {
-    return;
-  }
-
-  if (codingData.length > 0 && !isSending) {
-    isSending = true;
+  if (result) {
+    privateKey = result;
     try {
-      for (const item of codingData) {
-        if (item.language === language && item.duration >= 30) {
-          const dataToSend = {
-            privateKey,
-            languageName: item.language,
-            timeSpent: item.duration,
-          };
-
-          await axios.post(API_URL, dataToSend);
-        }
-      }
-      codingData = [];
+      await vscode.workspace
+        .getConfiguration()
+        .update(
+          "byteRace.privateKey",
+          privateKey,
+          vscode.ConfigurationTarget.Global
+        );
+      vscode.window.showInformationMessage(`Private key set to: ${privateKey}`);
     } catch (error) {
-      console.error("Error sending data:", error);
-    } finally {
-      isSending = false;
+      vscode.window.showErrorMessage("Failed to save private key.");
     }
   }
-}
+};
 
-function startInactivityTimer() {
-  if (inactivityTimeout) {
-    clearTimeout(inactivityTimeout);
-  }
-
-  inactivityTimeout = setTimeout(() => {
-    sendData(currentLanguage || "");
-  }, 30000);
-}
+const loadPrivateKey = () => {
+  const config = vscode.workspace.getConfiguration();
+  privateKey = config.get("byteRace.privateKey") || null;
+};
 
 export function activate(context: vscode.ExtensionContext) {
-  vscode.workspace.onDidChangeTextDocument((event) => {
-    const document = event.document;
-    const language = document.languageId;
-    trackLanguage(language);
-    startInactivityTimer();
-  });
+  loadPrivateKey();
 
-  vscode.window.onDidChangeTextEditorSelection(() => {
-    startInactivityTimer();
-  });
-
-  const setPrivateKeyCommand = vscode.commands.registerCommand(
-    "byteRace.setPrivateKey",
-    async () => {
-      const privateKey = await vscode.window.showInputBox({
-        prompt: "Enter your private key",
-        placeHolder: "Paste your private key here",
-      });
-
-      if (!privateKey) {
-        return;
-      }
-
-      try {
-        await setPrivateKey(privateKey);
-      } catch (error) {
-        console.error("Error setting private key:", error);
-      }
-    }
+  const disposableSessionKeyCommand = vscode.commands.registerCommand(
+    "byteRace.inputPrivateKey",
+    inputPrivateKey
   );
 
-  context.subscriptions.push(setPrivateKeyCommand);
+  const disposableSave = vscode.workspace.onDidSaveTextDocument(
+    onDidSaveTextDocument
+  );
+  const disposableChange = vscode.workspace.onDidChangeTextDocument(
+    onDidChangeTextDocument
+  );
+
+  context.subscriptions.push(
+    disposableSessionKeyCommand,
+    disposableSave,
+    disposableChange
+  );
 }
 
 export function deactivate() {
-  sendData(currentLanguage || "");
+  if (typingTimer) {
+    clearTimeout(typingTimer);
+  }
 }

@@ -41,106 +41,88 @@ exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const axios_1 = __importDefault(require("axios"));
 const API_URL = "https://byterace.vercel.app/api/activity";
-let currentLanguage = null;
-let lastActivityTime = Date.now();
-let codingData = [];
-let isSending = false;
-let inactivityTimeout = null;
-let languageChangedTimeout = null;
-let debounceTimeout = null;
-const languageChangeDelay = 30000;
-function getPrivateKey() {
-    const config = vscode.workspace.getConfiguration("byteRace");
-    return config.get("privateKey");
-}
-async function setPrivateKey(privateKey) {
-    const config = vscode.workspace.getConfiguration("byteRace");
-    await config.update("privateKey", privateKey, vscode.ConfigurationTarget.Global);
-}
-function trackLanguage(language) {
-    const now = Date.now();
-    if (currentLanguage && inactivityTimeout) {
-        const duration = (now - lastActivityTime) / 1000;
-        if (duration >= 30) {
-            codingData.push({ language: currentLanguage, duration });
-        }
-    }
-    currentLanguage = language;
-    lastActivityTime = now;
-    if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-    }
-    if (languageChangedTimeout) {
-        clearTimeout(languageChangedTimeout);
-    }
-    languageChangedTimeout = setTimeout(() => {
-        sendData(language);
-    }, languageChangeDelay);
-}
-async function sendData(language) {
-    const privateKey = getPrivateKey();
-    if (!privateKey) {
+const Byte_INTERVAL = 2 * 60 * 1000;
+let lastByteTime = null;
+let typingTimer = null;
+let privateKey = null;
+let startTime = null;
+const sendByte = async (language, timeSpent) => {
+    if (!privateKey)
         return;
-    }
-    if (codingData.length > 0 && !isSending) {
-        isSending = true;
-        try {
-            for (const item of codingData) {
-                if (item.language === language && item.duration >= 30) {
-                    const dataToSend = {
-                        privateKey,
-                        languageName: item.language,
-                        timeSpent: item.duration,
-                    };
-                    await axios_1.default.post(API_URL, dataToSend);
-                }
-            }
-            codingData = [];
-        }
-        catch (error) {
-            console.error("Error sending data:", error);
-        }
-        finally {
-            isSending = false;
-        }
-    }
-}
-function startInactivityTimer() {
-    if (inactivityTimeout) {
-        clearTimeout(inactivityTimeout);
-    }
-    inactivityTimeout = setTimeout(() => {
-        sendData(currentLanguage || "");
-    }, 30000);
-}
-function activate(context) {
-    vscode.workspace.onDidChangeTextDocument((event) => {
-        const document = event.document;
-        const language = document.languageId;
-        trackLanguage(language);
-        startInactivityTimer();
-    });
-    vscode.window.onDidChangeTextEditorSelection(() => {
-        startInactivityTimer();
-    });
-    const setPrivateKeyCommand = vscode.commands.registerCommand("byteRace.setPrivateKey", async () => {
-        const privateKey = await vscode.window.showInputBox({
-            prompt: "Enter your private key",
-            placeHolder: "Paste your private key here",
+    try {
+        const response = await axios_1.default.post(API_URL, {
+            privateKey,
+            languageName: language,
+            timeSpent,
         });
-        if (!privateKey) {
-            return;
+        if (response.status === 200) {
+            lastByteTime = Date.now();
         }
+        else {
+            console.error("Failed to send byte:", response.statusText);
+        }
+    }
+    catch (error) {
+        console.error("Failed to send byte:", error);
+    }
+};
+const onDidChangeTextDocument = (event) => {
+    if (typingTimer) {
+        clearTimeout(typingTimer);
+    }
+    if (!startTime) {
+        startTime = Date.now();
+    }
+    typingTimer = setTimeout(() => {
+        const now = Date.now();
+        const language = event.document.languageId;
+        if (!lastByteTime || now - lastByteTime >= Byte_INTERVAL) {
+            const timeSpent = (now - (startTime || 0)) / 1000 / 60;
+            sendByte(language, timeSpent);
+            startTime = now;
+        }
+    }, Byte_INTERVAL);
+};
+const onDidSaveTextDocument = (document) => {
+    const language = document.languageId;
+    if (startTime) {
+        const timeSpent = (Date.now() - startTime) / 1000 / 60;
+        sendByte(language, timeSpent);
+        startTime = Date.now();
+    }
+};
+const inputPrivateKey = async () => {
+    const result = await vscode.window.showInputBox({
+        prompt: "Enter ByteRace private key:",
+        placeHolder: "Private Key",
+    });
+    if (result) {
+        privateKey = result;
         try {
-            await setPrivateKey(privateKey);
+            await vscode.workspace
+                .getConfiguration()
+                .update("byteRace.privateKey", privateKey, vscode.ConfigurationTarget.Global);
+            vscode.window.showInformationMessage(`Private key set to: ${privateKey}`);
         }
         catch (error) {
-            console.error("Error setting private key:", error);
+            vscode.window.showErrorMessage("Failed to save private key.");
         }
-    });
-    context.subscriptions.push(setPrivateKeyCommand);
+    }
+};
+const loadPrivateKey = () => {
+    const config = vscode.workspace.getConfiguration();
+    privateKey = config.get("byteRace.privateKey") || null;
+};
+function activate(context) {
+    loadPrivateKey();
+    const disposableSessionKeyCommand = vscode.commands.registerCommand("byteRace.inputPrivateKey", inputPrivateKey);
+    const disposableSave = vscode.workspace.onDidSaveTextDocument(onDidSaveTextDocument);
+    const disposableChange = vscode.workspace.onDidChangeTextDocument(onDidChangeTextDocument);
+    context.subscriptions.push(disposableSessionKeyCommand, disposableSave, disposableChange);
 }
 function deactivate() {
-    sendData(currentLanguage || "");
+    if (typingTimer) {
+        clearTimeout(typingTimer);
+    }
 }
 //# sourceMappingURL=extension.js.map
