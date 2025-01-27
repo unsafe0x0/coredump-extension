@@ -1,0 +1,59 @@
+{
+  "name": "byterace",
+  "displayName": "ByteRace",
+  "description": "Tracks coding activity by language and duration.",
+  "version": "1.0.1",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "icon": "assets/logo.png",
+  "contributes": {
+    "commands": [
+      {
+        "command": "byteRace.setPrivateKey",
+        "title": "Set ByteRace Private Key"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "ByteRace Configuration",
+      "properties": {
+        "byteRace.privateKey": {
+          "type": "string",
+          "default": "",
+          "description": "The private key used to authenticate with the ByteRace server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.9.36",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.96.0",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.16.0",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "axios": "^1.7.9"
+  }
+}

@@ -40,4 +40,4 @@ ByteRace is a VS Code extension that allows users to compete in coding activity 
 
 ## We welcome contributions!
 
-**Enjoy competing in coding challenges with ByteRace!**# ByteRace-Extension
+**Enjoy competing in coding challenges with ByteRace!**
