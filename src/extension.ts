@@ -9,10 +9,13 @@ interface CodingActivity {
 }
 
 let currentLanguage: string | null = null;
-let startTime: number | null = null;
+let lastActivityTime: number = Date.now();
 let codingData: CodingActivity[] = [];
 let isSending = false;
-let lastSentTime: number = Date.now();
+let inactivityTimeout: NodeJS.Timeout | null = null;
+let languageChangedTimeout: NodeJS.Timeout | null = null;
+let debounceTimeout: NodeJS.Timeout | null = null;
+const languageChangeDelay = 30000;
 
 function getPrivateKey(): string | undefined {
   const config = vscode.workspace.getConfiguration("byteRace");
@@ -30,50 +33,66 @@ async function setPrivateKey(privateKey: string) {
 
 function trackLanguage(language: string) {
   const now = Date.now();
-  if (currentLanguage && startTime) {
-    const duration = (now - startTime) / 1000;
-    codingData.push({ language: currentLanguage, duration });
+  if (currentLanguage && inactivityTimeout) {
+    const duration = (now - lastActivityTime) / 1000;
+    if (duration >= 30) {
+      codingData.push({ language: currentLanguage, duration });
+    }
   }
+
   currentLanguage = language;
-  startTime = now;
+  lastActivityTime = now;
+
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout);
+  }
+
+  if (languageChangedTimeout) {
+    clearTimeout(languageChangedTimeout);
+  }
+
+  languageChangedTimeout = setTimeout(() => {
+    sendData(language);
+  }, languageChangeDelay);
 }
 
-async function sendData() {
+async function sendData(language: string) {
   const privateKey = getPrivateKey();
   if (!privateKey) {
-    vscode.window.showErrorMessage(
-      'Private key is not set. Use the command "ByteRace: Set Private Key" to configure it.'
-    );
     return;
   }
 
-  const currentTime = Date.now();
-  const timeDifference = (currentTime - lastSentTime) / 1000;
-
-  if (codingData.length > 0 && timeDifference >= 60 && !isSending) {
+  if (codingData.length > 0 && !isSending) {
     isSending = true;
     try {
       for (const item of codingData) {
-        const dataToSend = {
-          privateKey,
-          languageName: item.language,
-          timeSpent: item.duration,
-        };
+        if (item.language === language && item.duration >= 30) {
+          const dataToSend = {
+            privateKey,
+            languageName: item.language,
+            timeSpent: item.duration,
+          };
 
-        await axios.post(API_URL, dataToSend);
+          await axios.post(API_URL, dataToSend);
+        }
       }
-
       codingData = [];
-      lastSentTime = currentTime;
     } catch (error) {
       console.error("Error sending data:", error);
-      vscode.window.showErrorMessage(
-        "Failed to send coding data to the server."
-      );
     } finally {
       isSending = false;
     }
   }
+}
+
+function startInactivityTimer() {
+  if (inactivityTimeout) {
+    clearTimeout(inactivityTimeout);
+  }
+
+  inactivityTimeout = setTimeout(() => {
+    sendData(currentLanguage || "");
+  }, 30000);
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -81,15 +100,12 @@ export function activate(context: vscode.ExtensionContext) {
     const document = event.document;
     const language = document.languageId;
     trackLanguage(language);
+    startInactivityTimer();
   });
 
-  setInterval(sendData, 1000);
-
-  context.subscriptions.push(
-    new vscode.Disposable(() => {
-      sendData();
-    })
-  );
+  vscode.window.onDidChangeTextEditorSelection(() => {
+    startInactivityTimer();
+  });
 
   const setPrivateKeyCommand = vscode.commands.registerCommand(
     "byteRace.setPrivateKey",
@@ -100,16 +116,13 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       if (!privateKey) {
-        vscode.window.showErrorMessage("No private key provided.");
         return;
       }
 
       try {
         await setPrivateKey(privateKey);
-        vscode.window.showInformationMessage("Private key set successfully!");
       } catch (error) {
         console.error("Error setting private key:", error);
-        vscode.window.showErrorMessage("Failed to set private key.");
       }
     }
   );
@@ -118,5 +131,5 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-  sendData();
+  sendData(currentLanguage || "");
 }

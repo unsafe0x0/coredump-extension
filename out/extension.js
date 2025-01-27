@@ -42,10 +42,13 @@ const vscode = __importStar(require("vscode"));
 const axios_1 = __importDefault(require("axios"));
 const API_URL = "https://byterace.vercel.app/api/activity";
 let currentLanguage = null;
-let startTime = null;
+let lastActivityTime = Date.now();
 let codingData = [];
 let isSending = false;
-let lastSentTime = Date.now();
+let inactivityTimeout = null;
+let languageChangedTimeout = null;
+let debounceTimeout = null;
+const languageChangeDelay = 30000;
 function getPrivateKey() {
     const config = vscode.workspace.getConfiguration("byteRace");
     return config.get("privateKey");
@@ -56,75 +59,88 @@ async function setPrivateKey(privateKey) {
 }
 function trackLanguage(language) {
     const now = Date.now();
-    if (currentLanguage && startTime) {
-        const duration = (now - startTime) / 1000;
-        codingData.push({ language: currentLanguage, duration });
+    if (currentLanguage && inactivityTimeout) {
+        const duration = (now - lastActivityTime) / 1000;
+        if (duration >= 30) {
+            codingData.push({ language: currentLanguage, duration });
+        }
     }
     currentLanguage = language;
-    startTime = now;
+    lastActivityTime = now;
+    if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+    }
+    if (languageChangedTimeout) {
+        clearTimeout(languageChangedTimeout);
+    }
+    languageChangedTimeout = setTimeout(() => {
+        sendData(language);
+    }, languageChangeDelay);
 }
-async function sendData() {
+async function sendData(language) {
     const privateKey = getPrivateKey();
     if (!privateKey) {
-        vscode.window.showErrorMessage('Private key is not set. Use the command "ByteRace: Set Private Key" to configure it.');
         return;
     }
-    const currentTime = Date.now();
-    const timeDifference = (currentTime - lastSentTime) / 1000;
-    if (codingData.length > 0 && timeDifference >= 60 && !isSending) {
+    if (codingData.length > 0 && !isSending) {
         isSending = true;
         try {
             for (const item of codingData) {
-                const dataToSend = {
-                    privateKey,
-                    languageName: item.language,
-                    timeSpent: item.duration,
-                };
-                await axios_1.default.post(API_URL, dataToSend);
+                if (item.language === language && item.duration >= 30) {
+                    const dataToSend = {
+                        privateKey,
+                        languageName: item.language,
+                        timeSpent: item.duration,
+                    };
+                    await axios_1.default.post(API_URL, dataToSend);
+                }
             }
             codingData = [];
-            lastSentTime = currentTime;
         }
         catch (error) {
             console.error("Error sending data:", error);
-            vscode.window.showErrorMessage("Failed to send coding data to the server.");
         }
         finally {
             isSending = false;
         }
     }
 }
+function startInactivityTimer() {
+    if (inactivityTimeout) {
+        clearTimeout(inactivityTimeout);
+    }
+    inactivityTimeout = setTimeout(() => {
+        sendData(currentLanguage || "");
+    }, 30000);
+}
 function activate(context) {
     vscode.workspace.onDidChangeTextDocument((event) => {
         const document = event.document;
         const language = document.languageId;
         trackLanguage(language);
+        startInactivityTimer();
     });
-    setInterval(sendData, 1000);
-    context.subscriptions.push(new vscode.Disposable(() => {
-        sendData();
-    }));
+    vscode.window.onDidChangeTextEditorSelection(() => {
+        startInactivityTimer();
+    });
     const setPrivateKeyCommand = vscode.commands.registerCommand("byteRace.setPrivateKey", async () => {
         const privateKey = await vscode.window.showInputBox({
             prompt: "Enter your private key",
             placeHolder: "Paste your private key here",
         });
         if (!privateKey) {
-            vscode.window.showErrorMessage("No private key provided.");
             return;
         }
         try {
             await setPrivateKey(privateKey);
-            vscode.window.showInformationMessage("Private key set successfully!");
         }
         catch (error) {
             console.error("Error setting private key:", error);
-            vscode.window.showErrorMessage("Failed to set private key.");
         }
     });
     context.subscriptions.push(setPrivateKeyCommand);
 }
 function deactivate() {
-    sendData();
+    sendData(currentLanguage || "");
 }
 //# sourceMappingURL=extension.js.map
