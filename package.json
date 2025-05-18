@@ -10,15 +10,16 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onCommand:byteRace.inputPrivateKey"
   ],
   "main": "./out/extension.js",
   "icon": "assets/logo.png",
   "contributes": {
     "commands": [
       {
-        "command": "byteRace.setPrivateKey",
-        "title": "Set ByteRace Private Key"
+        "command": "byteRace.inputPrivateKey",
+        "title": "Input ByteRace Private Key"
       }
     ],
     "configuration": {

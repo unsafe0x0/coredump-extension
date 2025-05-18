@@ -41,85 +41,54 @@ exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const axios_1 = __importDefault(require("axios"));
 const API_URL = "https://byterace.vercel.app/api/activity";
-const BYTE_INTERVAL_MS = 2 * 60 * 1000;
+const SEND_INTERVAL_MS = 2 * 60 * 1000;
+const MIN_SEND_DURATION_MS = 60 * 1000;
 const IDLE_THRESHOLD_MS = 1 * 60 * 1000;
-let lastByteTime = null;
-let typingTimer = null;
-let idleTimer = null;
 let privateKey = null;
-let startTime = null;
-let isIdle = false;
-const sendByte = async (language, timeSpent) => {
-    if (!privateKey)
+let lastActivityTimestamp = Date.now();
+let lastSentTimestamp = 0;
+let accumulatedActiveTime = 0;
+let idleTimer = null;
+const sendByte = async (language) => {
+    if (!privateKey || accumulatedActiveTime < MIN_SEND_DURATION_MS)
         return;
+    const timeSpentMinutes = accumulatedActiveTime / 1000 / 60;
+    accumulatedActiveTime = 0;
     try {
-        const response = await axios_1.default.post(API_URL, {
+        await axios_1.default.post(API_URL, {
             privateKey,
             languageName: language,
-            timeSpent,
+            timeSpent: timeSpentMinutes,
         });
-        if (response.status === 200) {
-            lastByteTime = Date.now();
-        }
-        else {
-            console.error("Failed to send byte:", response.statusText);
-        }
+        lastSentTimestamp = Date.now();
     }
     catch (error) {
         console.error("Failed to send byte:", error);
     }
 };
 const resetIdleTimer = () => {
-    if (idleTimer) {
+    if (idleTimer)
         clearTimeout(idleTimer);
-    }
     idleTimer = setTimeout(() => {
-        isIdle = true;
-        startTime = null;
+        accumulatedActiveTime = 0;
+        lastActivityTimestamp = Date.now();
     }, IDLE_THRESHOLD_MS);
-    isIdle = false;
 };
 const onDidChangeTextDocument = (event) => {
-    resetIdleTimer();
-    if (isIdle || !privateKey) {
-        startTime = Date.now();
-    }
-    if (typingTimer) {
-        clearTimeout(typingTimer);
-    }
-    if (!startTime) {
-        startTime = Date.now();
-    }
-    typingTimer = setTimeout(() => {
-        const now = Date.now();
-        const language = event.document.languageId;
-        if (!lastByteTime || now - lastByteTime >= BYTE_INTERVAL_MS) {
-            if (!isIdle && startTime) {
-                const elapsedMs = now - startTime;
-                const timeSpentMinutes = elapsedMs / 1000 / 60;
-                sendByte(language, timeSpentMinutes);
-                startTime = now;
-            }
-        }
-    }, BYTE_INTERVAL_MS);
-};
-const onDidSaveTextDocument = (document) => {
-    resetIdleTimer();
-    if (isIdle || !startTime) {
-        startTime = Date.now();
-        return;
-    }
-    const language = document.languageId;
     const now = Date.now();
-    const elapsedMs = now - startTime;
-    const timeSpentMinutes = elapsedMs / 1000 / 60;
-    sendByte(language, timeSpentMinutes);
-    startTime = now;
+    const timeSinceLastActivity = now - lastActivityTimestamp;
+    if (timeSinceLastActivity < IDLE_THRESHOLD_MS) {
+        accumulatedActiveTime += timeSinceLastActivity;
+    }
+    lastActivityTimestamp = now;
+    resetIdleTimer();
+    if (now - lastSentTimestamp >= SEND_INTERVAL_MS) {
+        sendByte(event.document.languageId);
+    }
 };
 const inputPrivateKey = async () => {
     const result = await vscode.window.showInputBox({
-        prompt: "Enter ByteRace private key:",
-        placeHolder: "Private Key",
+        prompt: "Enter ByteRace private key",
         ignoreFocusOut: true,
     });
     if (result) {
@@ -128,7 +97,7 @@ const inputPrivateKey = async () => {
             await vscode.workspace
                 .getConfiguration()
                 .update("byteRace.privateKey", privateKey, vscode.ConfigurationTarget.Global);
-            vscode.window.showInformationMessage("Private key saved successfully.");
+            vscode.window.showInformationMessage("Private key saved.");
         }
         catch {
             vscode.window.showErrorMessage("Failed to save private key.");
@@ -141,17 +110,10 @@ const loadPrivateKey = () => {
 };
 function activate(context) {
     loadPrivateKey();
-    const disposableSessionKeyCommand = vscode.commands.registerCommand("byteRace.inputPrivateKey", inputPrivateKey);
-    const disposableSave = vscode.workspace.onDidSaveTextDocument(onDidSaveTextDocument);
-    const disposableChange = vscode.workspace.onDidChangeTextDocument(onDidChangeTextDocument);
-    context.subscriptions.push(disposableSessionKeyCommand, disposableSave, disposableChange);
+    context.subscriptions.push(vscode.commands.registerCommand("byteRace.inputPrivateKey", inputPrivateKey), vscode.workspace.onDidChangeTextDocument(onDidChangeTextDocument));
 }
 function deactivate() {
-    if (typingTimer) {
-        clearTimeout(typingTimer);
-    }
-    if (idleTimer) {
+    if (idleTimer)
         clearTimeout(idleTimer);
-    }
 }
 //# sourceMappingURL=extension.js.map

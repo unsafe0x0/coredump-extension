@@ -10,13 +10,6 @@ ByteRace is a VS Code extension that allows users to compete in coding activity 
 
 ## Installation
 
-<!-- ### From the Marketplace
-
-1. Open VS Code.
-2. Go to the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of the window.
-3. Search for `ByteRace`.
-4. Click `Install`. -->
-
 ### Locally
 
 1. Download the latest release from the [GitHub repository](https://github.com/Bluetooxth/ByteRace-Extension).
