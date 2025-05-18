@@ -41,11 +41,14 @@ exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const axios_1 = __importDefault(require("axios"));
 const API_URL = "https://byterace.vercel.app/api/activity";
-const Byte_INTERVAL = 2 * 60 * 1000;
+const BYTE_INTERVAL_MS = 2 * 60 * 1000;
+const IDLE_THRESHOLD_MS = 1 * 60 * 1000;
 let lastByteTime = null;
 let typingTimer = null;
+let idleTimer = null;
 let privateKey = null;
 let startTime = null;
+let isIdle = false;
 const sendByte = async (language, timeSpent) => {
     if (!privateKey)
         return;
@@ -66,7 +69,21 @@ const sendByte = async (language, timeSpent) => {
         console.error("Failed to send byte:", error);
     }
 };
+const resetIdleTimer = () => {
+    if (idleTimer) {
+        clearTimeout(idleTimer);
+    }
+    idleTimer = setTimeout(() => {
+        isIdle = true;
+        startTime = null;
+    }, IDLE_THRESHOLD_MS);
+    isIdle = false;
+};
 const onDidChangeTextDocument = (event) => {
+    resetIdleTimer();
+    if (isIdle || !privateKey) {
+        startTime = Date.now();
+    }
     if (typingTimer) {
         clearTimeout(typingTimer);
     }
@@ -76,25 +93,34 @@ const onDidChangeTextDocument = (event) => {
     typingTimer = setTimeout(() => {
         const now = Date.now();
         const language = event.document.languageId;
-        if (!lastByteTime || now - lastByteTime >= Byte_INTERVAL) {
-            const timeSpent = (now - (startTime || 0)) / 1000 / 60;
-            sendByte(language, timeSpent);
-            startTime = now;
+        if (!lastByteTime || now - lastByteTime >= BYTE_INTERVAL_MS) {
+            if (!isIdle && startTime) {
+                const elapsedMs = now - startTime;
+                const timeSpentMinutes = elapsedMs / 1000 / 60;
+                sendByte(language, timeSpentMinutes);
+                startTime = now;
+            }
         }
-    }, Byte_INTERVAL);
+    }, BYTE_INTERVAL_MS);
 };
 const onDidSaveTextDocument = (document) => {
-    const language = document.languageId;
-    if (startTime) {
-        const timeSpent = (Date.now() - startTime) / 1000 / 60;
-        sendByte(language, timeSpent);
+    resetIdleTimer();
+    if (isIdle || !startTime) {
         startTime = Date.now();
+        return;
     }
+    const language = document.languageId;
+    const now = Date.now();
+    const elapsedMs = now - startTime;
+    const timeSpentMinutes = elapsedMs / 1000 / 60;
+    sendByte(language, timeSpentMinutes);
+    startTime = now;
 };
 const inputPrivateKey = async () => {
     const result = await vscode.window.showInputBox({
         prompt: "Enter ByteRace private key:",
         placeHolder: "Private Key",
+        ignoreFocusOut: true,
     });
     if (result) {
         privateKey = result;
@@ -102,9 +128,9 @@ const inputPrivateKey = async () => {
             await vscode.workspace
                 .getConfiguration()
                 .update("byteRace.privateKey", privateKey, vscode.ConfigurationTarget.Global);
-            vscode.window.showInformationMessage(`Private key set to: ${privateKey}`);
+            vscode.window.showInformationMessage("Private key saved successfully.");
         }
-        catch (error) {
+        catch {
             vscode.window.showErrorMessage("Failed to save private key.");
         }
     }
@@ -123,6 +149,9 @@ function activate(context) {
 function deactivate() {
     if (typingTimer) {
         clearTimeout(typingTimer);
+    }
+    if (idleTimer) {
+        clearTimeout(idleTimer);
     }
 }
 //# sourceMappingURL=extension.js.map
