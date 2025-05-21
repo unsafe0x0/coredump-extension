@@ -86,6 +86,35 @@ const onDidChangeTextDocument = (event) => {
         sendByte(event.document.languageId);
     }
 };
+const onDidChangeActiveTextEditor = (editor) => {
+    const now = Date.now();
+    const timeSinceLastActivity = now - lastActivityTimestamp;
+    if (timeSinceLastActivity < IDLE_THRESHOLD_MS) {
+        accumulatedActiveTime += timeSinceLastActivity;
+    }
+    lastActivityTimestamp = now;
+    resetIdleTimer();
+    if (editor && now - lastSentTimestamp >= SEND_INTERVAL_MS) {
+        sendByte(editor.document.languageId);
+    }
+};
+const onDidChangeWindowState = (state) => {
+    const now = Date.now();
+    if (state.focused) {
+        lastActivityTimestamp = now;
+        resetIdleTimer();
+    }
+    else {
+        if (now - lastActivityTimestamp < IDLE_THRESHOLD_MS) {
+            accumulatedActiveTime += now - lastActivityTimestamp;
+        }
+        if (now - lastSentTimestamp >= SEND_INTERVAL_MS) {
+            const editor = vscode.window.activeTextEditor;
+            if (editor)
+                sendByte(editor.document.languageId);
+        }
+    }
+};
 const inputPrivateKey = async () => {
     const result = await vscode.window.showInputBox({
         prompt: "Enter ByteRace private key",
@@ -110,7 +139,7 @@ const loadPrivateKey = () => {
 };
 function activate(context) {
     loadPrivateKey();
-    context.subscriptions.push(vscode.commands.registerCommand("byteRace.inputPrivateKey", inputPrivateKey), vscode.workspace.onDidChangeTextDocument(onDidChangeTextDocument));
+    context.subscriptions.push(vscode.commands.registerCommand("byteRace.inputPrivateKey", inputPrivateKey), vscode.workspace.onDidChangeTextDocument(onDidChangeTextDocument), vscode.window.onDidChangeActiveTextEditor(onDidChangeActiveTextEditor), vscode.window.onDidChangeWindowState(onDidChangeWindowState));
 }
 function deactivate() {
     if (idleTimer)

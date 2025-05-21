@@ -2,7 +2,8 @@
   "name": "byterace",
   "displayName": "ByteRace",
   "description": "Tracks coding activity by language and duration.",
-  "version": "1.0.1",
+  "version": "1.0.2",
+  "publisher": "muxdust",
   "engines": {
     "vscode": "^1.96.0"
   },
