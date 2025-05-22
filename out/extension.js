@@ -40,7 +40,7 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const axios_1 = __importDefault(require("axios"));
-const API_URL = "https://byterace.vercel.app/api/activity";
+const API_URL = "https://bashforge.vercel.app/api/activity";
 const SEND_INTERVAL_MS = 2 * 60 * 1000;
 const MIN_SEND_DURATION_MS = 60 * 1000;
 const IDLE_THRESHOLD_MS = 1 * 60 * 1000;
@@ -49,7 +49,7 @@ let lastActivityTimestamp = Date.now();
 let lastSentTimestamp = 0;
 let accumulatedActiveTime = 0;
 let idleTimer = null;
-const sendByte = async (language) => {
+const bashForge = async (language) => {
     if (!privateKey || accumulatedActiveTime < MIN_SEND_DURATION_MS)
         return;
     const timeSpentMinutes = accumulatedActiveTime / 1000 / 60;
@@ -83,7 +83,7 @@ const onDidChangeTextDocument = (event) => {
     lastActivityTimestamp = now;
     resetIdleTimer();
     if (now - lastSentTimestamp >= SEND_INTERVAL_MS) {
-        sendByte(event.document.languageId);
+        bashForge(event.document.languageId);
     }
 };
 const onDidChangeActiveTextEditor = (editor) => {
@@ -95,7 +95,7 @@ const onDidChangeActiveTextEditor = (editor) => {
     lastActivityTimestamp = now;
     resetIdleTimer();
     if (editor && now - lastSentTimestamp >= SEND_INTERVAL_MS) {
-        sendByte(editor.document.languageId);
+        bashForge(editor.document.languageId);
     }
 };
 const onDidChangeWindowState = (state) => {
@@ -111,13 +111,13 @@ const onDidChangeWindowState = (state) => {
         if (now - lastSentTimestamp >= SEND_INTERVAL_MS) {
             const editor = vscode.window.activeTextEditor;
             if (editor)
-                sendByte(editor.document.languageId);
+                bashForge(editor.document.languageId);
         }
     }
 };
 const inputPrivateKey = async () => {
     const result = await vscode.window.showInputBox({
-        prompt: "Enter ByteRace private key",
+        prompt: "Enter BashForge private key",
         ignoreFocusOut: true,
     });
     if (result) {
@@ -125,7 +125,7 @@ const inputPrivateKey = async () => {
         try {
             await vscode.workspace
                 .getConfiguration()
-                .update("byteRace.privateKey", privateKey, vscode.ConfigurationTarget.Global);
+                .update("bashForge.privateKey", privateKey, vscode.ConfigurationTarget.Global);
             vscode.window.showInformationMessage("Private key saved.");
         }
         catch {
@@ -135,11 +135,11 @@ const inputPrivateKey = async () => {
 };
 const loadPrivateKey = () => {
     const config = vscode.workspace.getConfiguration();
-    privateKey = config.get("byteRace.privateKey") || null;
+    privateKey = config.get("bashForge.privateKey") || null;
 };
 function activate(context) {
     loadPrivateKey();
-    context.subscriptions.push(vscode.commands.registerCommand("byteRace.inputPrivateKey", inputPrivateKey), vscode.workspace.onDidChangeTextDocument(onDidChangeTextDocument), vscode.window.onDidChangeActiveTextEditor(onDidChangeActiveTextEditor), vscode.window.onDidChangeWindowState(onDidChangeWindowState));
+    context.subscriptions.push(vscode.commands.registerCommand("bashForge.inputPrivateKey", inputPrivateKey), vscode.workspace.onDidChangeTextDocument(onDidChangeTextDocument), vscode.window.onDidChangeActiveTextEditor(onDidChangeActiveTextEditor), vscode.window.onDidChangeWindowState(onDidChangeWindowState));
 }
 function deactivate() {
     if (idleTimer)

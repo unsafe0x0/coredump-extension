@@ -1,6 +1,6 @@
 {
-  "name": "byterace",
-  "displayName": "ByteRace",
+  "name": "bashforge",
+  "displayName": "BashForge",
   "description": "Tracks coding activity by language and duration.",
   "version": "1.0.2",
   "publisher": "muxdust",
@@ -12,25 +12,25 @@
   ],
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:byteRace.inputPrivateKey"
+    "onCommand:bashForge.inputPrivateKey"
   ],
   "main": "./out/extension.js",
   "icon": "assets/logo.png",
   "contributes": {
     "commands": [
       {
-        "command": "byteRace.inputPrivateKey",
-        "title": "Input ByteRace Private Key"
+        "command": "bashForge.inputPrivateKey",
+        "title": "Input BashForge Private Key"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "ByteRace Configuration",
+      "title": "BashForge Configuration",
       "properties": {
-        "byteRace.privateKey": {
+        "bashForge.privateKey": {
           "type": "string",
           "default": "",
-          "description": "The private key used to authenticate with the ByteRace server."
+          "description": "The private key used to authenticate with the BashForge server."
         }
       }
     }
