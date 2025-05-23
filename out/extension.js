@@ -41,8 +41,8 @@ exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const axios_1 = __importDefault(require("axios"));
 const API_URL = "https://bashforge.vercel.app/api/activity";
-const SEND_INTERVAL_MS = 2 * 60 * 1000;
-const MIN_SEND_DURATION_MS = 60 * 1000;
+const SEND_INTERVAL_MS = 45 * 1000;
+const MIN_SEND_DURATION_MS = 30 * 1000;
 const IDLE_THRESHOLD_MS = 1 * 60 * 1000;
 let privateKey = null;
 let lastActivityTimestamp = Date.now();
@@ -63,7 +63,7 @@ const bashForge = async (language) => {
         lastSentTimestamp = Date.now();
     }
     catch (error) {
-        console.error("Failed to send byte:", error);
+        console.error("Failed to send data:", error);
     }
 };
 const resetIdleTimer = () => {
