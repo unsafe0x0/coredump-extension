@@ -2,7 +2,7 @@
   "name": "bashforge",
   "displayName": "BashForge",
   "description": "Tracks coding activity by language and duration.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "unsafezero",
   "engines": {
     "vscode": "^1.96.0"
