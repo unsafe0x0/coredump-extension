@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import axios from "axios";
 
-const API_URL = "https://bashforge.vercel.app/api/activity";
-const SEND_INTERVAL_MS = 45 * 1000;
+const API_URL = "https://coredump.vercel.app/api/activity";
+const SEND_INTERVAL_MS = 30 * 1000;
 const MIN_SEND_DURATION_MS = 30 * 1000;
 const IDLE_THRESHOLD_MS = 1 * 60 * 1000;
 
@@ -12,7 +12,7 @@ let lastSentTimestamp = 0;
 let accumulatedActiveTime = 0;
 let idleTimer: NodeJS.Timeout | null = null;
 
-const bashForge = async (language: string) => {
+const CoreDump = async (language: string) => {
   if (!privateKey || accumulatedActiveTime < MIN_SEND_DURATION_MS) return;
 
   const timeSpentMinutes = accumulatedActiveTime / 1000 / 60;
@@ -50,7 +50,7 @@ const onDidChangeTextDocument = (event: vscode.TextDocumentChangeEvent) => {
   resetIdleTimer();
 
   if (now - lastSentTimestamp >= SEND_INTERVAL_MS) {
-    bashForge(event.document.languageId);
+    CoreDump(event.document.languageId);
   }
 };
 
@@ -66,7 +66,7 @@ const onDidChangeActiveTextEditor = (editor: vscode.TextEditor | undefined) => {
   resetIdleTimer();
 
   if (editor && now - lastSentTimestamp >= SEND_INTERVAL_MS) {
-    bashForge(editor.document.languageId);
+    CoreDump(editor.document.languageId);
   }
 };
 
@@ -83,14 +83,14 @@ const onDidChangeWindowState = (state: vscode.WindowState) => {
 
     if (now - lastSentTimestamp >= SEND_INTERVAL_MS) {
       const editor = vscode.window.activeTextEditor;
-      if (editor) bashForge(editor.document.languageId);
+      if (editor) CoreDump(editor.document.languageId);
     }
   }
 };
 
 const inputPrivateKey = async () => {
   const result = await vscode.window.showInputBox({
-    prompt: "Enter BashForge private key",
+    prompt: "Enter CoreDump private key",
     ignoreFocusOut: true,
   });
 
@@ -100,7 +100,7 @@ const inputPrivateKey = async () => {
       await vscode.workspace
         .getConfiguration()
         .update(
-          "bashForge.privateKey",
+          "CoreDump.privateKey",
           privateKey,
           vscode.ConfigurationTarget.Global
         );
@@ -113,7 +113,7 @@ const inputPrivateKey = async () => {
 
 const loadPrivateKey = () => {
   const config = vscode.workspace.getConfiguration();
-  privateKey = config.get<string>("bashForge.privateKey") || null;
+  privateKey = config.get<string>("CoreDump.privateKey") || null;
 };
 
 export function activate(context: vscode.ExtensionContext) {
@@ -121,7 +121,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "bashForge.inputPrivateKey",
+      "CoreDump.inputPrivateKey",
       inputPrivateKey
     ),
     vscode.workspace.onDidChangeTextDocument(onDidChangeTextDocument),

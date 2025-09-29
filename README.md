@@ -1,16 +1,16 @@
-# BashForge Extension
+# CoreDump Extension
 
 <div align="center">
 
 ## Track Your Code, Dominate the Leaderboard
 
-The official VS Code extension for BashForge - automatically track your coding time, build streaks, and compete with developers worldwide directly from your favorite editor.
+The official VS Code extension for CoreDump - automatically track your coding time, build streaks, and compete with developers worldwide directly from your favorite editor.
 
-[🚀 BashForge Web](https://bashforge.vercel.app) • [📖 Documentation](https://bashforge.vercel.app/how-to-use) • [💻 GitHub](https://github.com/unsafe0x0/BashForge-Extension)
+[CoreDump Web](https://coredump.vercel.app) • [Documentation](https://coredump.vercel.app/how-to-use) • [GitHub](https://github.com/unsafe0x0/CoreDump-Extension)
 
 </div>
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -18,12 +18,12 @@ The official VS Code extension for BashForge - automatically track your coding t
 
 1. Open VS Code
 2. Go to Extensions (`Ctrl+Shift+X` / `Cmd+Shift+X`)
-3. Search for "BashForge"
+3. Search for "CoreDump"
 4. Click **Install**
 
 #### Manual Installation
 
-1. Download the latest `.vsix` file from [GitHub](https://github.com/unsafe0x0/BashForge-Extension)
+1. Download the latest `.vsix` file from [GitHub](https://github.com/unsafe0x0/CoreDump-Extension)
 2. Open VS Code
 3. Go to Extensions view (`Ctrl+Shift+X` / `Cmd+Shift+X`)
 4. Click the `...` menu → **Install from VSIX...**
@@ -32,42 +32,42 @@ The official VS Code extension for BashForge - automatically track your coding t
 ### Setup & Configuration
 
 1. **Get Your Private Key**
-   - Visit [BashForge](https://bashforge.vercel.app)
+   - Visit [CoreDump](https://coredump.vercel.app)
    - Sign up or log in to your account
    - Go to Dashboard → Private Key
    - Copy your private Private Key
 
 2. **Configure Extension**
    - Open VS Code Settings (`Ctrl+,` / `Cmd+,`)
-   - Search for "BashForge"
-   - Paste your Private Key in the **BashForge: Private Key** field
+   - Search for "CoreDump"
+   - Paste your Private Key in the **CoreDump: Private Key** field
 
 3. **Start Coding!**
    - The extension automatically starts tracking when you begin coding
-   - View your progress on the [BashForge Dashboard](https://bashforge.vercel.app/dashboard)
+   - View your progress on the [CoreDump Dashboard](https://coredump.vercel.app/dashboard)
 
-## ⚙️ Extension Settings
+## Extension Settings
 
-### `bashForge.inputPrivateKey`
+### `CoreDump.inputPrivateKey`
 
-- **Description**: Quickly set or update your BashForge Private Key via the Command Palette.
-- **How to use**: Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`), search for `BashForge: Enter Private Key`, and enter your key when prompted.
+- **Description**: Quickly set or update your CoreDump Private Key via the Command Palette.
+- **How to use**: Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`), search for `CoreDump: Enter Private Key`, and enter your key when prompted.
 - **Purpose**: Provides a convenient way to configure your Private Key without navigating through settings.
 
-## 🎯 Supported Languages
+## Supported Languages
 
 The extension automatically detects and tracks the languages
 
 
-## 📁 How It Works
+## How It Works
 
 1. **File Monitoring**: Tracks active file changes and editor focus
 2. **Language Detection**: Identifies programming language from file extensions
 4. **Data Collection**: Securely collects time spent and language usage
-5. **Secure Sync**: Encrypts and sends data to BashForge servers
+5. **Secure Sync**: Encrypts and sends data to CoreDump servers
 6. **Real-time Updates**: Updates your profile and leaderboard position
 
-## 🛠️ Development
+## Development
 
 ### Prerequisites
 
@@ -75,7 +75,7 @@ The extension automatically detects and tracks the languages
 - VS Code Extension Development Environment
 - TypeScript knowledge
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions!
 
@@ -85,19 +85,19 @@ We welcome contributions!
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📋 Requirements
+## Requirements
 
 - **VS Code**: Version 1.74.0 or higher
 - **Node.js**: Version 16+ (for development)
 - **Internet**: Required for data synchronization
-- **BashForge Account**: Free account at [bashforge.vercel.app](https://bashforge.vercel.app)
+- **CoreDump Account**: Free account at [coredump.vercel.app](https://coredump.vercel.app)
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by UnsafeZero, for developers worldwide**
+**Made with ❤️ by UnsafeZero, for developers**
 
-[🌐 Website](https://bashforge.vercel.app) • [📱 GitHub](https://github.com/unsafe0x0) • [🐦 Twitter](https://twitter.com/unsafezero) • [💬 Discord](https://discord.gg/bashforge)
+[🌐 Website](https://coredump.vercel.app) • [📱 GitHub](https://github.com/unsafe0x0) • [🐦 Twitter](https://twitter.com/unsafezero) • [💬 Discord](https://discord.gg/unsafezero)
 
 </div>

@@ -1,9 +1,13 @@
 {
-  "name": "bashforge",
-  "displayName": "BashForge",
+  "name": "coredump",
+  "displayName": "CoreDump",
   "description": "Tracks coding activity by language and duration.",
-  "version": "1.0.4",
+  "version": "1.0.0",
   "publisher": "unsafezero",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unsafezero/coredump-extension"
+  },
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -12,25 +16,25 @@
   ],
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:bashForge.inputPrivateKey"
+    "onCommand:CoreDump.inputPrivateKey"
   ],
   "main": "./out/extension.js",
   "icon": "assets/logo.png",
   "contributes": {
     "commands": [
       {
-        "command": "bashForge.inputPrivateKey",
-        "title": "Input BashForge Private Key"
+        "command": "coredump.inputPrivateKey",
+        "title": "Input CoreDump Private Key"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "BashForge Configuration",
+      "title": "CoreDump Configuration",
       "properties": {
-        "bashForge.privateKey": {
+        "CoreDump.privateKey": {
           "type": "string",
           "default": "",
-          "description": "The private key used to authenticate with the BashForge server."
+          "description": "The private key used to authenticate with the CoreDump server."
         }
       }
     }
