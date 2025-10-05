@@ -32,12 +32,14 @@ The official VS Code extension for CoreDump - automatically track your coding ti
 ### Setup & Configuration
 
 1. **Get Your Private Key**
+
    - Visit [CoreDump](https://coredump.vercel.app)
    - Sign up or log in to your account
    - Go to Dashboard → Private Key
    - Copy your private Private Key
 
 2. **Configure Extension**
+
    - Open VS Code Settings (`Ctrl+,` / `Cmd+,`)
    - Search for "CoreDump"
    - Paste your Private Key in the **CoreDump: Private Key** field
@@ -58,14 +60,13 @@ The official VS Code extension for CoreDump - automatically track your coding ti
 
 The extension automatically detects and tracks the languages
 
-
 ## How It Works
 
 1. **File Monitoring**: Tracks active file changes and editor focus
 2. **Language Detection**: Identifies programming language from file extensions
-4. **Data Collection**: Securely collects time spent and language usage
-5. **Secure Sync**: Encrypts and sends data to CoreDump servers
-6. **Real-time Updates**: Updates your profile and leaderboard position
+3. **Data Collection**: Securely collects time spent and language usage
+4. **Secure Sync**: Encrypts and sends data to CoreDump servers
+5. **Real-time Updates**: Updates your profile and leaderboard position
 
 ## Development
 
@@ -98,6 +99,6 @@ We welcome contributions!
 
 **Made with ❤️ by UnsafeZero, for developers**
 
-[🌐 Website](https://coredump.vercel.app) • [📱 GitHub](https://github.com/unsafe0x0) • [🐦 Twitter](https://twitter.com/unsafezero) • [💬 Discord](https://discord.gg/unsafezero)
+[Website](https://coredump.vercel.app) • [GitHub](https://github.com/unsafe0x0) • [Twitter](https://twitter.com/unsafezero) • [Discord](https://discord.gg/unsafezero)
 
 </div>

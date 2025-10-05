@@ -2,7 +2,7 @@
   "name": "coredump",
   "displayName": "CoreDump",
   "description": "Tracks coding activity by language and duration.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "unsafezero",
   "repository": {
     "type": "git",
