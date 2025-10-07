@@ -2,7 +2,7 @@
   "name": "coredump",
   "displayName": "CoreDump",
   "description": "Tracks coding activity by language and duration.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "unsafezero",
   "repository": {
     "type": "git",
@@ -23,7 +23,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "coredump.inputPrivateKey",
+        "command": "Coredump.inputPrivateKey",
         "title": "Input CoreDump Private Key"
       }
     ],
