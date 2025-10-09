@@ -2,7 +2,7 @@
   "name": "coredump",
   "displayName": "CoreDump",
   "description": "Tracks coding activity by language and duration.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "unsafezero",
   "repository": {
     "type": "git",
@@ -15,15 +15,14 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished",
-    "onCommand:CoreDump.inputPrivateKey"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "icon": "assets/logo.png",
   "contributes": {
     "commands": [
       {
-        "command": "Coredump.inputPrivateKey",
+        "command": "CoreDump.inputPrivateKey",
         "title": "Input CoreDump Private Key"
       }
     ],
